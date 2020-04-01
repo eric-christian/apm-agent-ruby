@@ -32,6 +32,12 @@ Lint/RescueException:
 Lint/SuppressedException:
   Enabled: false
 
+Lint/RaiseException:
+  Enabled: true
+
+Lint/StructNewOverride:
+  Enabled: true
+
 # Metrics /
 
 Metrics/AbcSize:

@@ -123,6 +123,16 @@ RSpec.describe 'OpenTracing bridge', :intercept do
         end
       end
 
+      context 'Text map' do
+        let(:format) { ::OpenTracing::FORMAT_TEXT_MAP }
+
+        it 'sets a header' do
+          subject
+          expect(carrier['elastic-apm-traceparent'])
+            .to eq context.traceparent.to_header
+        end
+      end
+
       context 'Binary' do
         let(:format) { ::OpenTracing::FORMAT_BINARY }
 
@@ -134,15 +144,27 @@ RSpec.describe 'OpenTracing bridge', :intercept do
     end
 
     describe '#extract' do
-      let(:carrier) do
-        { 'HTTP_ELASTIC_APM_TRACEPARENT' =>
-          '00-11111111111111111111111111111111-2222222222222222-00' }
-      end
-
       subject { ::OpenTracing.extract(format, carrier) }
 
       context 'Rack' do
         let(:format) { ::OpenTracing::FORMAT_RACK }
+        let(:carrier) do
+        { 'HTTP_ELASTIC_APM_TRACEPARENT' =>
+            '00-11111111111111111111111111111111-2222222222222222-00' }
+        end
+
+        it 'returns a trace context' do
+          expect(subject).to be_a ElasticAPM::TraceContext
+          expect(subject.trace_id).to eq '11111111111111111111111111111111'
+        end
+      end
+
+      context 'Text map' do
+        let(:format) { ::OpenTracing::FORMAT_TEXT_MAP }
+        let(:carrier) do
+          { 'elastic-apm-traceparent' =>
+              '00-11111111111111111111111111111111-2222222222222222-00' }
+        end
 
         it 'returns a trace context' do
           expect(subject).to be_a ElasticAPM::TraceContext
@@ -152,9 +174,10 @@ RSpec.describe 'OpenTracing bridge', :intercept do
 
       context 'Binary' do
         let(:format) { ::OpenTracing::FORMAT_BINARY }
+        let(:carrier) { {} }
 
         it 'warns about lack of support' do
-          expect(tracer).to receive(:warn).with(/Only extraction from/)
+          expect(tracer).to receive(:warn).with(/Only extraction via/)
           subject
         end
       end

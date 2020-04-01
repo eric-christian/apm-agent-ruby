@@ -25,3 +25,4 @@ benchmark-*.error
 benchmark-*.raw
 
 .ci/docker/jruby/output.log
+/.ruby-version

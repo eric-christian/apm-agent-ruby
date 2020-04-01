@@ -61,8 +61,8 @@ module ElasticAPM
           ElasticAPM.report_message message
         end
       end
-
       # rubocop:enable Lint/UnusedMethodArgument
+
       def finish(clock_end: Util.monotonic_micros, end_time: nil)
         return unless (agent = ElasticAPM.agent)
 
@@ -271,26 +271,28 @@ module ElasticAPM
 
         Span.new(elastic_span, span_context)
       end
-
       # rubocop:enable Metrics/ParameterLists
 
       def inject(span_context, format, carrier)
         case format
-        when ::OpenTracing::FORMAT_RACK
+        when ::OpenTracing::FORMAT_RACK, ::OpenTracing::FORMAT_TEXT_MAP
           carrier['elastic-apm-traceparent'] =
             span_context.traceparent.to_header
         else
-          warn 'Only injection via HTTP headers and Rack is available'
+          warn 'Only injection via FORMAT_TEXT_MAP or via HTTP headers and ' \
+            'FORMAT_RACK is available'
         end
       end
 
       def extract(format, carrier)
         case format
-        when ::OpenTracing::FORMAT_RACK
+        when ::OpenTracing::FORMAT_RACK, ::OpenTracing::FORMAT_TEXT_MAP
           ElasticAPM::TraceContext
-            .parse(carrier['HTTP_ELASTIC_APM_TRACEPARENT'])
+            .parse(carrier['HTTP_ELASTIC_APM_TRACEPARENT'] ||
+                     carrier['elastic-apm-traceparent'])
         else
-          warn 'Only extraction from HTTP headers via Rack is available'
+          warn 'Only extraction via FORMAT_TEXT_MAP or via HTTP headers and ' \
+            'FORMAT_RACK is available'
           nil
         end
       rescue ElasticAPM::TraceContext::InvalidTraceparentHeader
@@ -327,7 +329,7 @@ module ElasticAPM
       def context_from_active_scope(ignore_active_scope)
         if ignore_active_scope
           ElasticAPM.agent&.config&.logger&.warn(
-            'ignore_active_scope might lead to unexpeced results'
+            'ignore_active_scope might lead to unexpected results'
           )
           return
         end
