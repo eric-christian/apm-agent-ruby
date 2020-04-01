@@ -67,7 +67,6 @@ RSpec.describe 'OpenTracing bridge', :intercept do
         subject! { ::OpenTracing.start_active_span('namest') }
         after { subject.close }
 
-        it { should be_an ElasticAPM::OpenTracing::Scope }
         its(:elastic_span) { should be_a ElasticAPM::Transaction }
 
         it 'is active' do
@@ -89,6 +88,20 @@ RSpec.describe 'OpenTracing bridge', :intercept do
 
         it 'is active' do
           expect(::OpenTracing.active_span).to be subject.span
+        end
+      end
+
+      context 'without a code block' do
+        subject! { ::OpenTracing.start_active_span('namest') }
+
+        it { should be_an ElasticAPM::OpenTracing::Scope }
+      end
+
+      context 'with a code block' do
+        subject! { ::OpenTracing.start_active_span('namest') { 'result' } }
+
+        it 'returns the return value of the block' do
+          expect(subject).to eq 'result'
         end
       end
     end
@@ -149,8 +162,8 @@ RSpec.describe 'OpenTracing bridge', :intercept do
       context 'Rack' do
         let(:format) { ::OpenTracing::FORMAT_RACK }
         let(:carrier) do
-        { 'HTTP_ELASTIC_APM_TRACEPARENT' =>
-            '00-11111111111111111111111111111111-2222222222222222-00' }
+          { 'HTTP_ELASTIC_APM_TRACEPARENT' =>
+              '00-11111111111111111111111111111111-2222222222222222-00' }
         end
 
         it 'returns a trace context' do
