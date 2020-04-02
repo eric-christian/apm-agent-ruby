@@ -68,16 +68,10 @@ module ElasticAPM
       end
       # rubocop:enable Lint/UnusedMethodArgument
 
-      def finish(clock_end: Util.monotonic_micros, end_time: nil)
+      def finish(_clock_end: nil, end_time: Time.now)
         return unless (agent = ElasticAPM.agent)
 
-        if end_time
-          warn '[ElasticAPM] DEPRECATED: Setting a custom end time as a ' \
-            '`Time` is deprecated. Use `clock_end:` and monotonic time instead.'
-          clock_end = end_time
-        end
-
-        elastic_span.done clock_end: clock_end
+        elastic_span.done clock_end: Util.micros(end_time)
 
         case elastic_span
         when ElasticAPM::Transaction
@@ -216,7 +210,8 @@ module ElasticAPM
         child_of: nil,
         references: nil,
         start_time: Time.now,
-        labels: {},
+        labels: nil,
+        tags: {},
         ignore_active_scope: false,
         finish_on_close: true,
         **
@@ -249,10 +244,12 @@ module ElasticAPM
         child_of: nil,
         references: nil,
         start_time: Time.now,
-        labels: {},
+        labels: nil,
+        tags: {},
         ignore_active_scope: false,
         **
       )
+        labels ||= tags
         span_context = prepare_span_context(
           child_of: child_of,
           references: references,

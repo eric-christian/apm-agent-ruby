@@ -327,29 +327,45 @@ RSpec.describe 'OpenTracing bridge', :intercept do
             .to_not raise_error
         end
       end
+
     end
 
-    describe 'deprecations' do
-      describe '#finish with Time' do
-        it 'warns and manages' do
-          transaction =
-            ElasticAPM::Transaction.new(config: ElasticAPM::Config.new)
+    describe 'set_tag' do
+      subject { described_class.new(nil, nil) }
 
-          elastic_span =
-            ElasticAPM::Span.new(
-              name: 'Span',
-              transaction: transaction,
-              parent: transaction,
-              trace_context: nil
-            ).start
-          span = described_class.new(elastic_span, nil)
+      before do
+        allow(subject).to receive(:set_label)
+      end
 
-          expect(span).to receive(:warn).with(/DEPRECATED/)
+      it 'delegates to set_label' do
+        subject.set_tag('k', 'v')
+        expect(subject).to have_received(:set_label).with('k', 'v')
+      end
 
-          span.finish end_time: Time.now
+      it 'returns self' do
+        expect(subject.set_tag('k', 'v')).to be subject
+      end
+    end
 
-          expect(elastic_span.duration).to_not be nil
-        end
+    describe '#finish' do
+      subject { ::OpenTracing.start_active_span('namest').span }
+
+      it 'stops the elastic_span' do
+        expect { subject.finish }.to change(subject.elastic_span, :stopped?)
+      end
+
+      it 'returns true' do
+        expect(subject.finish).to be true
+      end
+
+      it 'sets a reasonable duration' do
+        subject.finish
+        expect(subject.elastic_span.duration).to be_between(0, 10_000)
+      end
+
+      it 'can handle end_time' do
+        subject.finish(end_time: Time.now + 0.01)
+        expect(subject.elastic_span.duration).to be_between(10_000, 20_000)
       end
     end
   end
