@@ -118,7 +118,7 @@ RSpec.describe 'OpenTracing bridge', :intercept do
 
     describe '#inject' do
       let(:context) do
-        ElasticAPM::TraceContext.parse(
+        ElasticAPM::OpenTracing::SpanContext.parse(
           '00-11111111111111111111111111111111-2222222222222222-00'
         )
       end
@@ -132,7 +132,7 @@ RSpec.describe 'OpenTracing bridge', :intercept do
         it 'sets a header' do
           subject
           expect(carrier['elastic-apm-traceparent'])
-            .to eq context.traceparent.to_header
+            .to eq context.to_header
         end
       end
 
@@ -142,7 +142,7 @@ RSpec.describe 'OpenTracing bridge', :intercept do
         it 'sets a header' do
           subject
           expect(carrier['elastic-apm-traceparent'])
-            .to eq context.traceparent.to_header
+            .to eq context.to_header
         end
       end
 
@@ -167,7 +167,7 @@ RSpec.describe 'OpenTracing bridge', :intercept do
         end
 
         it 'returns a trace context' do
-          expect(subject).to be_a ElasticAPM::TraceContext
+          expect(subject).to be_a ElasticAPM::OpenTracing::SpanContext
           expect(subject.trace_id).to eq '11111111111111111111111111111111'
         end
       end
@@ -180,7 +180,7 @@ RSpec.describe 'OpenTracing bridge', :intercept do
         end
 
         it 'returns a trace context' do
-          expect(subject).to be_a ElasticAPM::TraceContext
+          expect(subject).to be_a ElasticAPM::OpenTracing::SpanContext
           expect(subject.trace_id).to eq '11111111111111111111111111111111'
         end
       end

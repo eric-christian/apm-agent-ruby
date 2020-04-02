@@ -39,6 +39,11 @@ module ElasticAPM
         end
       end
 
+      def set_tag(*args)
+        set_label(*args)
+        self
+      end
+
       def set_baggage_item(_key, _value)
         ElasticAPM.agent.config.logger.warn(
           'Baggage is not supported by ElasticAPM'
@@ -97,6 +102,8 @@ module ElasticAPM
 
     # @api private
     class SpanContext
+      extend Forwardable
+
       def initialize(trace_context:, baggage: nil)
         if baggage
           ElasticAPM.agent.config.logger.warn(
@@ -108,6 +115,22 @@ module ElasticAPM
       end
 
       attr_accessor :trace_context
+      attr_reader :baggage
+
+      def_delegators :trace_context, :trace_id, :id
+
+      def to_header
+        trace_context.traceparent.to_header
+      end
+
+      def self.parse(header)
+        return unless header
+
+        trace_context = ElasticAPM::TraceContext.parse(header)
+        return unless trace_context
+
+        from_trace_context(trace_context)
+      end
 
       def self.from_trace_context(trace_context)
         new(trace_context: trace_context)
@@ -277,7 +300,7 @@ module ElasticAPM
         case format
         when ::OpenTracing::FORMAT_RACK, ::OpenTracing::FORMAT_TEXT_MAP
           carrier['elastic-apm-traceparent'] =
-            span_context.traceparent.to_header
+            span_context.to_header
         else
           warn 'Only injection via FORMAT_TEXT_MAP or via HTTP headers and ' \
             'FORMAT_RACK is available'
@@ -287,9 +310,8 @@ module ElasticAPM
       def extract(format, carrier)
         case format
         when ::OpenTracing::FORMAT_RACK, ::OpenTracing::FORMAT_TEXT_MAP
-          ElasticAPM::TraceContext
-            .parse(carrier['HTTP_ELASTIC_APM_TRACEPARENT'] ||
-                     carrier['elastic-apm-traceparent'])
+          SpanContext.parse(carrier['HTTP_ELASTIC_APM_TRACEPARENT'] ||
+            carrier['elastic-apm-traceparent'])
         else
           warn 'Only extraction via FORMAT_TEXT_MAP or via HTTP headers and ' \
             'FORMAT_RACK is available'
