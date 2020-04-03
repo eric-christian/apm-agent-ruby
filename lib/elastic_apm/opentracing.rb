@@ -111,7 +111,7 @@ module ElasticAPM
       attr_accessor :trace_context
       attr_reader :baggage
 
-      def_delegators :trace_context, :trace_id, :id
+      def_delegators :trace_context, :trace_id, :id, :parent_id
 
       def to_header
         trace_context.traceparent.to_header
@@ -123,11 +123,18 @@ module ElasticAPM
         trace_context = ElasticAPM::TraceContext.parse(header)
         return unless trace_context
 
+        trace_context.traceparent.id = trace_context.traceparent.parent_id
+        trace_context.traceparent.parent_id = nil
+
         from_trace_context(trace_context)
       end
 
       def self.from_trace_context(trace_context)
         new(trace_context: trace_context)
+      end
+
+      def child
+        self.class.from_trace_context(trace_context.child)
       end
     end
 
@@ -216,6 +223,7 @@ module ElasticAPM
         finish_on_close: true,
         **
       )
+        labels ||= tags
         span = start_span(
           operation_name,
           child_of: child_of,
@@ -309,6 +317,7 @@ module ElasticAPM
         when ::OpenTracing::FORMAT_RACK, ::OpenTracing::FORMAT_TEXT_MAP
           SpanContext.parse(carrier['HTTP_ELASTIC_APM_TRACEPARENT'] ||
             carrier['elastic-apm-traceparent'])
+
         else
           warn 'Only extraction via FORMAT_TEXT_MAP or via HTTP headers and ' \
             'FORMAT_RACK is available'
@@ -325,9 +334,12 @@ module ElasticAPM
         references:,
         ignore_active_scope:
       )
-        context_from_child_of(child_of) ||
-          context_from_references(references) ||
-          context_from_active_scope(ignore_active_scope)
+        context = context_from_child_of(child_of) ||
+                  context_from_references(references) ||
+                  context_from_active_scope(ignore_active_scope)
+        return context.child if context&.respond_to?(:child)
+
+        context
       end
 
       def context_from_child_of(child_of)
