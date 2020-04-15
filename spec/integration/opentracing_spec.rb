@@ -285,7 +285,7 @@ RSpec.describe 'OpenTracing bridge', :intercept do
       end
     end
 
-    describe 'set_label' do
+    describe 'set_tag' do
       subject { described_class.new(elastic_span, trace_context) }
 
       shared_examples :opengraph_span do
@@ -294,12 +294,14 @@ RSpec.describe 'OpenTracing bridge', :intercept do
           expect(elastic_span.name).to eq 'Test'
         end
 
-        describe 'set_label' do
-          it 'sets label' do
-            subject.set_label :custom_key, 'custom_type'
-            expect(subject.elastic_span.context.labels[:custom_key])
-              .to eq 'custom_type'
-          end
+        it 'sets tag' do
+          subject.set_tag :custom_key, 'custom_type'
+          expect(subject.elastic_span.context.labels[:custom_key])
+            .to eq 'custom_type'
+        end
+
+        it 'returns self' do
+          expect(subject.set_tag('k', 'v')).to be subject
         end
       end
 
@@ -312,10 +314,10 @@ RSpec.describe 'OpenTracing bridge', :intercept do
         it_behaves_like :opengraph_span
 
         it 'knows user fields' do
-          subject.set_label 'user.id', 1
-          subject.set_label 'user.username', 'someone'
-          subject.set_label 'user.email', 'someone@example.com'
-          subject.set_label 'user.other_field', 'someone@example.com'
+          subject.set_tag 'user.id', 1
+          subject.set_tag 'user.username', 'someone'
+          subject.set_tag 'user.email', 'someone@example.com'
+          subject.set_tag 'user.other_field', 'someone@example.com'
 
           user = subject.elastic_span.context.user
           expect(user.id).to eq 1
@@ -341,26 +343,26 @@ RSpec.describe 'OpenTracing bridge', :intercept do
         it_behaves_like :opengraph_span
 
         it "doesn't explode on user fields" do
-          expect { subject.set_label 'user.id', 1 }
+          expect { subject.set_tag 'user.id', 1 }
             .to_not raise_error
         end
       end
     end
 
-    describe '#set_tag' do
+    describe '#set_label' do
       subject { described_class.new(nil, nil) }
 
       before do
-        allow(subject).to receive(:set_label)
+        allow(subject).to receive(:set_tag)
       end
 
       it 'delegates to set_label' do
-        subject.set_tag('k', 'v')
-        expect(subject).to have_received(:set_label).with('k', 'v')
+        subject.set_label('k', 'v')
+        expect(subject).to have_received(:set_tag).with('k', 'v')
       end
 
-      it 'returns self' do
-        expect(subject.set_tag('k', 'v')).to be subject
+      it 'returns value' do
+        expect(subject.set_label('k', 'v')).to be 'v'
       end
     end
 

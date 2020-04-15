@@ -23,6 +23,12 @@ module ElasticAPM
       end
 
       def set_label(key, val)
+        set_tag(key, val)
+        val
+      end
+
+      def set_tag(key, val)
+        val = sanitize_tag_value(val)
         if elastic_span.is_a?(Transaction)
           case key.to_s
           when 'type'
@@ -37,11 +43,16 @@ module ElasticAPM
         else
           elastic_span.context.labels[key] = val
         end
+        self
       end
 
-      def set_tag(*args)
-        set_label(*args)
-        self
+      def sanitize_tag_value(value)
+        case value
+        when String, Numeric, TrueClass, FalseClass, NilClass
+          return value
+        else
+          return value.inspect
+        end
       end
 
       def set_baggage_item(_key, _value)
@@ -291,13 +302,11 @@ module ElasticAPM
         span_context ||=
           SpanContext.from_trace_context(elastic_span.trace_context)
 
-        labels.each do |key, value|
-          elastic_span.context.labels[key] = value
-        end
-
         elastic_span.start Util.micros(start_time)
 
-        Span.new(elastic_span, span_context)
+        Span.new(elastic_span, span_context).tap do |span|
+          labels.each { |key, value| span.set_tag(key, value) }
+        end
       end
       # rubocop:enable Metrics/ParameterLists
 
