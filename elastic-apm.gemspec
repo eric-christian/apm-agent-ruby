@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.email         = ['mikkel@elastic.co', 'eric.koch@sumcumo.com']
 
   spec.summary       = 'The official Elastic APM agent for Ruby - Forked for particles (temporarily)'
-  spec.homepage      = 'https://github.com/sumcumo/apm-agent-ruby'
-  spec.metadata     = { 'source_code_uri' => 'https://github.com/sumcumo/apm-agent-ruby' }
+  spec.homepage      = 'https://github.com/eric-christian/apm-agent-ruby'
+  spec.metadata     = { 'source_code_uri' => 'https://github.com/eric-christian/apm-agent-ruby' }
   spec.license       = 'Apache-2.0'
   spec.required_ruby_version = ">= 2.3.0"
 
