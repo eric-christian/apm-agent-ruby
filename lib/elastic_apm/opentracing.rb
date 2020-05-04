@@ -49,9 +49,9 @@ module ElasticAPM
       def sanitize_tag_value(value)
         case value
         when String, Numeric, TrueClass, FalseClass, NilClass
-          return value
+          value
         else
-          return value.inspect
+          value.inspect
         end
       end
 
@@ -275,10 +275,8 @@ module ElasticAPM
           ignore_active_scope: ignore_active_scope
         )
 
-        if span_context
-          trace_context =
-            span_context.respond_to?(:trace_context) &&
-            span_context.trace_context
+        if span_context&.respond_to?(:trace_context)
+          trace_context = span_context.trace_context
         end
 
         elastic_span =
@@ -313,8 +311,9 @@ module ElasticAPM
       def inject(span_context, format, carrier)
         case format
         when ::OpenTracing::FORMAT_RACK, ::OpenTracing::FORMAT_TEXT_MAP
-          carrier['elastic-apm-traceparent'] =
-            span_context.to_header
+          if span_context.respond_to?(:to_header)
+            carrier['elastic-apm-traceparent'] = span_context.to_header
+          end
         else
           warn 'Only injection via FORMAT_TEXT_MAP or via HTTP headers and ' \
             'FORMAT_RACK is available'

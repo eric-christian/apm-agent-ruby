@@ -25,9 +25,8 @@ require 'bundler/setup'
 Bundler.require :default, 'test'
 require 'yarjuf'
 
-Dir['spec/support/*.rb'].each { |file| require "./#{file}" }
-
 require 'elastic-apm'
+Dir['spec/support/*.rb'].each { |file| require "./#{file}" }
 
 Concurrent.use_stdlib_logger(Logger::DEBUG)
 Thread.abort_on_exception = true
