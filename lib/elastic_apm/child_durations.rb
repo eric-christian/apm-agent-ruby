@@ -13,8 +13,8 @@ module ElasticAPM
         child_durations.start
       end
 
-      def child_stopped
-        child_durations.stop
+      def child_stopped duration
+        child_durations.stop duration
       end
     end
 
@@ -22,7 +22,6 @@ module ElasticAPM
     class Durations
       def initialize
         @nesting_level = 0
-        @start = nil
         @duration = 0
         @mutex = Mutex.new
       end
@@ -32,14 +31,13 @@ module ElasticAPM
       def start
         @mutex.synchronize do
           @nesting_level += 1
-          @start = Util.micros if @nesting_level == 1
         end
       end
 
-      def stop
+      def stop duration
         @mutex.synchronize do
           @nesting_level -= 1
-          @duration = (Util.micros - @start) if @nesting_level == 0
+          @duration += duration if @nesting_level == 0
         end
       end
     end

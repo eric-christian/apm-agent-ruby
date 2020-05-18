@@ -90,15 +90,19 @@ module ElasticAPM
         expect(subject.duration).to be 100
       end
 
-      it 'calculates self_time' do
-        subject.start
-        travel 100
-        child = Span.new(
+      def create_child
+        Span.new(
           name: 'span',
           transaction: transaction,
           trace_context: nil,
           parent: subject
-        ).start
+        )
+      end
+
+      it 'calculates self_time' do
+        subject.start
+        travel 100
+        child = create_child.start
         travel 100
         child.stop
         travel 100
@@ -106,6 +110,35 @@ module ElasticAPM
 
         expect(child.self_time).to eq 100
         expect(subject.self_time).to eq 200
+      end
+
+      context 'with more then one sequential child' do
+        it 'calculates self_time' do
+          subject.start
+          travel 100
+          create_child.start.tap { travel 100 }.stop
+          travel 100
+          create_child.start.tap { travel 100 }.stop
+          travel 100
+          subject.stop
+
+          expect(subject.self_time).to eq 300
+        end
+      end
+
+      context 'with nested children' do
+        it 'calculates self_time' do
+          subject.start
+          travel 100
+          create_child.start.tap do
+            travel 100
+            create_child.start.tap { travel 100 }.stop
+          end.stop
+          travel 100
+          subject.stop
+
+          expect(subject.self_time).to eq 200
+        end
       end
     end
 

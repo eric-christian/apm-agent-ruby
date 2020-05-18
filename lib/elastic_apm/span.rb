@@ -73,7 +73,7 @@ module ElasticAPM
 
     def stop(clock_end = Util.monotonic_micros)
       @duration ||= (clock_end - @clock_start)
-      @parent.child_stopped
+      @parent.child_stopped @duration
       @self_time = @duration - child_durations.duration
       self
     end
