@@ -3,7 +3,7 @@
 module ElasticAPM # :nodoc:
   # @api private
   module Normalizers
-    # @api privagte
+    # @api private
     class Normalizer
       def initialize(config)
         @config = config
