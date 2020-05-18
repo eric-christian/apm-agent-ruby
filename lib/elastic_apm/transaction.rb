@@ -56,8 +56,8 @@ module ElasticAPM
 
     # life cycle
 
-    def start(clock_start = Util.monotonic_micros)
-      @timestamp = Util.micros
+    def start(clock_start = Util.monotonic_micros, timestamp: Util.micros)
+      @timestamp = timestamp
       @clock_start = clock_start
       self
     end

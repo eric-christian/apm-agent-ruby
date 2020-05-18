@@ -300,7 +300,8 @@ module ElasticAPM
         span_context ||=
           SpanContext.from_trace_context(elastic_span.trace_context)
 
-        elastic_span.start Util.micros(start_time)
+        apm_start_time = Util.micros(start_time)
+        elastic_span.start(apm_start_time, timestamp: apm_start_time)
 
         Span.new(elastic_span, span_context).tap do |span|
           labels.each { |key, value| span.set_tag(key, value) }
