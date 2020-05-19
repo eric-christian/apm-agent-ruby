@@ -140,6 +140,23 @@ module ElasticAPM
           expect(subject.self_time).to eq 200
         end
       end
+
+      context 'with children in different threads' do
+        it 'calculates self_time' do
+          subject.start
+          travel 100
+
+          # TODO: Prevents travel us from actually testing the desired behavior?
+          (1..3).map do
+            Thread.new { create_child.start.tap { travel 100 }.stop }
+          end.map(&:join)
+
+          travel 100
+          subject.stop
+
+          expect(subject.self_time).to eq 200
+        end
+      end
     end
 
     describe '#done', :mock_time do
