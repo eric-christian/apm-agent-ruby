@@ -15,7 +15,7 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 2.3.0"
 
   if spec.respond_to?(:metadata)
-    spec.metadata['allowed_push_host'] = 'https://gems.sumcumo.net'
+    spec.metadata['allowed_push_host'] = 'https://artifactory7.sumcumo.net'
   else
     raise 'RubyGems 2.0 or newer is required to protect against public gem pushes.'
   end
